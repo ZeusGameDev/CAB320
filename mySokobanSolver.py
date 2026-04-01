@@ -203,9 +203,19 @@ def taboo_cells(warehouse):
             if not conf_valid:
                 taboo_cell_list.append(cell)
         
-        
-   
-    return taboo_cell_list
+    # Convert list of cells into map
+    # Modified version of warehouse.__str__
+    X,Y = zip(*warehouse.walls) # pythonic version of the above
+    x_size, y_size = 1+max(X), 1+max(Y)
+    
+    vis = [[" "] * x_size for y in range(y_size)]
+    # can't use  vis = [" " * x_size for y ...]
+    # because we want to change the characters later
+    for (x,y) in warehouse.walls:
+        vis[y][x] = "#"
+    for (x,y) in taboo_cell_list:
+        vis[y][x] = "X"
+    return "\n".join(["".join(line) for line in vis])
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
