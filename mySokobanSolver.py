@@ -72,11 +72,10 @@ def taboo_cells(warehouse):
        The returned string should NOT have marks for the worker, the targets,
        and the boxes.  
     '''
-    ##         "INSERT YOUR CODE HERE"  
     # List of all coordinates  
     cells_to_check = [(x, y) for x in range(0, warehouse.ncols) for y in range(0, warehouse.nrows)]
-    # Remove walls
-    cells_to_check = [cell for cell in cells_to_check if cell not in warehouse.walls]
+    # Remove walls and targets
+    cells_to_check = [cell for cell in cells_to_check if cell not in warehouse.walls and cell not in warehouse.targets]
     taboo_cell_list = []
     # Check each cell
     for cell in cells_to_check:
@@ -93,11 +92,119 @@ def taboo_cells(warehouse):
             continue
 
         # check if cell in a corner
-        walls_adj_vert = [(x, y-1), (x, y+1)] in warehouse.walls
-        walls_adj_hori = [(x-1, y), (x+1, y)] in warehouse.walls
-        # if (walls_adj_hori != [] and walls_adj_vert != []):
-        #     taboo_cell_list.append(cell)
-    
+        walls_adj_vert = [(row, col) for (row, col) in [(x, y-1), (x, y+1)] if (row, col) in warehouse.walls]
+        walls_adj_hori = [(row, col) for (row, col) in [(x-1, y), (x+1, y)] if (row, col) in warehouse.walls]
+        if (walls_adj_hori != [] and walls_adj_vert != []):
+            taboo_cell_list.append(cell)
+            continue
+
+        # Check along upper wall for break in wall or target
+        if ((x, y-1) in warehouse.walls):
+            conf_valid = False
+            # following wall to the left
+            for i in range(x, 0, -1):
+                # Stop once wall is reached
+                if (i, y) in warehouse.walls:
+                    break
+                # Valid if taget along wall
+                if (i, y) in warehouse.targets:
+                    conf_valid = True
+                    break
+                # Valid if wall stops 
+                if (i, y -1) not in warehouse.walls:
+                    conf_valid = True
+                    break
+            
+            # Same in oposite direction of cell
+            for i in range(x, warehouse.ncols):
+                if (i, y) in warehouse.walls:
+                    break
+                if (i, y) in warehouse.targets:
+                    conf_valid = True
+                    break
+                if (i, y-1) not in warehouse.walls:
+                    conf_valid = True
+                    break
+            if not conf_valid:
+                taboo_cell_list.append(cell)
+        
+        # Check along lower wall
+        if ((x, y+1) in warehouse.walls):
+            conf_valid = False
+            for i in range(x, 0, -1):
+                if (i, y) in warehouse.walls:
+                    break
+                if (i, y) in warehouse.targets:
+                    conf_valid = True
+                    break
+                if (i, y+1) not in warehouse.walls:
+                    conf_valid = True
+                    break
+            
+            for i in range(x, warehouse.ncols):
+                if (i, y) in warehouse.walls:
+                    break
+                if (i, y) in warehouse.targets:
+                    conf_valid = True
+                    break
+                if (i, y+1) not in warehouse.walls:
+                    conf_valid = True
+                    break
+            if not conf_valid:
+                taboo_cell_list.append(cell)
+
+        # Check along left wall
+        if ((x-1, y) in warehouse.walls):
+            conf_valid = False
+            for i in range(y, 0, -1):
+                if (x, i) in warehouse.walls:
+                    break
+                if (x, i) in warehouse.targets:
+                    conf_valid = True
+                    break
+                if (x-1, i) not in warehouse.walls:
+                    conf_valid = True
+                    break
+            
+            for i in range(y, warehouse.nrows):
+                if (x, i) in warehouse.walls:
+                    break
+                if (x, i) in warehouse.targets:
+                    conf_valid = True
+                    break
+                if (x-1, i) not in warehouse.walls:
+                    conf_valid = True
+                    break
+            if not conf_valid:
+                taboo_cell_list.append(cell)
+        
+        # Check along right wall
+        if ((x+1, y) in warehouse.walls):
+            conf_valid = False
+            for i in range(y, 0, -1):
+                if (x, i) in warehouse.walls:
+                    break
+                if (x, i) in warehouse.targets:
+                    conf_valid = True
+                    break
+                if (x+1, i) not in warehouse.walls:
+                    conf_valid = True
+                    break
+            
+            for i in range(y, warehouse.nrows):
+                if (x, i) in warehouse.walls:
+                    break
+                if (x, i) in warehouse.targets:
+                    conf_valid = True
+                    break
+                if (x+1, i) not in warehouse.walls:
+                    conf_valid = True
+                    break
+            if not conf_valid:
+                taboo_cell_list.append(cell)
+        
+        
+   
     return taboo_cell_list
 
 
