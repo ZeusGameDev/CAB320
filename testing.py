@@ -1,6 +1,8 @@
 import sokoban
 import mySokobanSolver
 
+print(actions(self, warehouse))
+
 wh = sokoban.Warehouse()
 wh.load_warehouse("CAB320 A1 Student Template\warehouses\warehouse_01.txt")
 

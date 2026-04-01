@@ -141,9 +141,12 @@ class SokobanPuzzle(search.Problem):
             # Let's find out if it is possible to move the player in this direction
             if (next_x,next_y) in warehouse.walls:
                 return # impossible move, do nothing
-            if (next_x,next_y) in warehouse.boxes:
+            elif (next_x,next_y) in warehouse.boxes:
                 if try_move_box( (next_x,next_y), (next_x+xy_offset[0],next_y+xy_offset[1]) ) == False:
                     return # box next to the player could not be pushed
+            else:
+                L.append(keys[i])
+            
             # now, the cell next to the player must be empty or with a box that can be moved
         
         # UP: if blank not on top row, swap it with tile above it
