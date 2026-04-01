@@ -31,6 +31,7 @@ Last modified by 2021-08-17  by f.maire@qut.edu.au
 # with these files
 import search 
 import sokoban
+direction_offset = {'Left' :(-1,0), 'Right':(1,0) , 'Up':(0,-1), 'Down':(0,1)} # (x,y) = (column,row)
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -42,7 +43,7 @@ def my_team():
     of triplet of the form (student_number, first_name, last_name)
     
     '''
-    return [ (11885807, 'Zach', 'Coglan'), (1234568, 'Grace', 'Hopper'), (1234569, 'Eva', 'Tardos') ]
+    return [ (11885807, 'Zach', 'Coglan'), (12452068, 'Xavier', 'White')]
     
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -130,11 +131,65 @@ class SokobanPuzzle(search.Problem):
     def __init__(self, warehouse):
         raise NotImplementedError()
 
-    def actions(self, state):
-        """
-        Return the list of actions that can be executed in the given state.
+    def actions(self, warehouse):
+        # index of the blank
+        x,y = warehouse.worker
+        L = []  # list of legal actions
+        for i in direction_offset.keys():
+            xy_offset = direction_offset[i]
+            next_x , next_y = x+xy_offset[0] , y+xy_offset[1] # where the player will go if possible
+            # Let's find out if it is possible to move the player in this direction
+            if (next_x,next_y) in warehouse.walls:
+                return # impossible move, do nothing
+            if (next_x,next_y) in warehouse.boxes:
+                if try_move_box( (next_x,next_y), (next_x+xy_offset[0],next_y+xy_offset[1]) ) == False:
+                    return # box next to the player could not be pushed
+            # now, the cell next to the player must be empty or with a box that can be moved
         
-        """
+        # UP: if blank not on top row, swap it with tile above it
+        if move_player('Left') == None:
+            return
+        else:
+            L.append('Up')
+            
+        # DOWN: If blank not on bottom row, swap it with tile below it
+        if i_blank < self.nc*(self.nr-1):
+            L.append('Down')
+            
+        # LEFT: If blank not in left column, swap it with tile to the left
+        if i_blank % self.nc >= 1:
+            L.append('Left')
+
+        # RIGHT: If blank not on right column, swap it with tile to the right
+        if i_blank % self.nc < self.nc-1:
+            L.append('Right')
+        
+        return L
+
+    
+    def result(self, state, action):
+        """Return the state that results from executing the given
+        action in the given state. The action must be one of
+        self.actions(state)."""
+        raise NotImplementedError
+
+    def goal_test(self, state):
+        """Return True if the state is a goal. The default method compares the
+        state to self.goal, as specified in the constructor. Override this
+        method if checking against a single self.goal is not enough."""
+        return state == self.goal
+
+    def path_cost(self, c, state1, action, state2):
+        """Return the cost of a solution path that arrives at state2 from
+        state1 via action, assuming cost c to get up to state1. If the problem
+        is such that the path doesn't matter, this function will only look at
+        state2.  If the path does matter, it will consider c and maybe state1
+        and action. The default method costs 1 for every step in the path."""
+        return c + 1
+
+    def value(self, state):
+        """For optimization problems, each state has a value.  Hill-climbing
+        and related algorithms try to maximize this value."""
         raise NotImplementedError
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
