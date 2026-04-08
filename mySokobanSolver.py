@@ -291,7 +291,54 @@ class SokobanPuzzle(search.Problem):
         """Return the state that results from executing the given
         action in the given state. The action must be one of
         self.actions(state)."""
-        raise NotImplementedError
+        # Create a copy of the current state to modify into next state
+        next_state = state.copy()
+        # Extract the worker and boxes for easy access
+        boxes = state.boxes
+        worker = state.worker
+        x = worker[0]
+        y = worker[1]
+        
+        # Depending on action, move in different direction
+        match action:
+            case "Up":
+                # Check if box above
+                if (x, y-1) in boxes:
+                    # Move box up
+                    boxes.remove((x, y-1))
+                    boxes.append((x, y-2))
+                # Move worker
+                worker = (x, y-1)
+
+            case "Down":
+                # Same as first case except down
+                if (x, y+1) in boxes:
+                    boxes.remove((x, y+1))
+                    boxes.append((x, y+2))
+                worker = (x, y+1)
+
+            case "Left":
+                if (x-1, y) in boxes:
+                    boxes.remove((x-1, y))
+                    boxes.append((x-2, y))
+                worker = (x-1, y)
+
+            case "Right":
+                if (x+1, y) in boxes:
+                    boxes.remove((x+1, y))
+                    boxes.append((x+2, y))
+                worker = (x+1, y)
+            
+            case _:
+                # Raise error if action not a valid Up, Down, Left, Right
+                raise TypeError("Action not of valid value")
+        
+        # Set the new positions of workers / boxes
+        next_state.worker = worker
+        next_state.boxes = boxes
+
+        return next_state
+
 
     def goal_test(self, state: Warehouse):
         """Return True if the state is a goal. The default method compares the
