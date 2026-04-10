@@ -31,6 +31,7 @@ Last modified by 2021-08-17  by f.maire@qut.edu.au
 # with these files
 import search 
 import sokoban
+
 direction_offset = {'Left' :(-1,0), 'Right':(1,0) , 'Up':(0,-1), 'Down':(0,1)} # (x,y) = (column,row)
 
 
@@ -233,16 +234,6 @@ class SokobanPuzzle(search.Problem):
     
     '''
     
-    #
-    #         "INSERT YOUR CODE HERE"
-    #
-    #     Revisit the sliding puzzle and the pancake puzzle for inspiration!
-    #
-    #     Note that you will need to add several functions to 
-    #     complete this class. For example, a 'result' method is needed
-    #     to satisfy the interface of 'search.Problem'.
-    #
-    #     You are allowed (and encouraged) to use auxiliary functions and classes
 
     
     def __init__(self, warehouse):
@@ -252,37 +243,18 @@ class SokobanPuzzle(search.Problem):
         # index of the blank
         x,y = warehouse.worker
         L = []  # list of legal actions
+
         for i in direction_offset.keys():
             xy_offset = direction_offset[i]
             next_x , next_y = x+xy_offset[0] , y+xy_offset[1] # where the player will go if possible
-            # Let's find out if it is possible to move the player in this direction
+            # ches if possible to move the player in this direction
             if (next_x,next_y) in warehouse.walls:
                 return # impossible move, do nothing
             elif (next_x,next_y) in warehouse.boxes:
                 if try_move_box( (next_x,next_y), (next_x+xy_offset[0],next_y+xy_offset[1]) ) == False:
                     return # box next to the player could not be pushed
             else:
-                L.append(keys[i])
-            
-            # now, the cell next to the player must be empty or with a box that can be moved
-        
-        # UP: if blank not on top row, swap it with tile above it
-        if move_player('Left') == None:
-            return
-        else:
-            L.append('Up')
-            
-        # DOWN: If blank not on bottom row, swap it with tile below it
-        if i_blank < self.nc*(self.nr-1):
-            L.append('Down')
-            
-        # LEFT: If blank not in left column, swap it with tile to the left
-        if i_blank % self.nc >= 1:
-            L.append('Left')
-
-        # RIGHT: If blank not on right column, swap it with tile to the right
-        if i_blank % self.nc < self.nc-1:
-            L.append('Right')
+                L.append(direction_offset.keys[i])
         
         return L
 
@@ -386,8 +358,36 @@ def check_elem_action_seq(warehouse, action_seq):
     '''
     
     ##         "INSERT YOUR CODE HERE"
+    boxes = warehouse.boxes
+    previous_boxes = boxes
+
+    if warehouse.boxes != warehouse.targets:
+        return "Impossible"
     
-    raise NotImplementedError()
+    for action in action_seq:
+        #general checks for action validity
+        if action not in direction_offset.keys():
+            return "Impossible"
+        if action not in SokobanPuzzle.actions(warehouse):
+            return "Impossible"
+        if boxes[i] in warehouse.walls:
+                return "Impossible"
+        
+        for i in range(len(boxes)):
+            #checks if box is in a taboo cell
+            if boxes[i] in taboo_cells(warehouse):
+                return "Impossible"
+            #checks if multiple boxes are being pushed at once
+            if boxes[i] != previous_boxes[i]:
+                     boxes_moved += 1
+                     if boxes_moved > 1:
+                            return "Impossible"
+        
+        previous_boxes = boxes
+
+    warehouse = SokobanPuzzle.result(warehouse, action)
+    return warehouse.__str__()
+    
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
