@@ -277,28 +277,28 @@ class SokobanPuzzle(search.Problem):
                 # Check if box above
                 if (x, y-1) in boxes:
                     # Move box up
-                    boxes.remove((x, y-1))
-                    boxes.append((x, y-2))
+                    box_index = boxes.index((x, y-1))
+                    boxes[box_index] = (x, y-2)
                 # Move worker
                 worker = (x, y-1)
 
             case "Down":
                 # Same as first case except down
                 if (x, y+1) in boxes:
-                    boxes.remove((x, y+1))
-                    boxes.append((x, y+2))
+                    box_index = boxes.index((x, y+1))
+                    boxes[box_index] = (x, y+2)
                 worker = (x, y+1)
 
             case "Left":
                 if (x-1, y) in boxes:
-                    boxes.remove((x-1, y))
-                    boxes.append((x-2, y))
+                    box_index = boxes.index((x-1, y))
+                    boxes[box_index] = (x-2, y)
                 worker = (x-1, y)
 
             case "Right":
                 if (x+1, y) in boxes:
-                    boxes.remove((x+1, y))
-                    boxes.append((x+2, y))
+                    box_index = boxes.index((x+1, y))
+                    boxes[box_index] = (x+2, y)
                 worker = (x+1, y)
             
             case _:
@@ -312,7 +312,7 @@ class SokobanPuzzle(search.Problem):
         return next_state
 
 
-    def goal_test(self, state: Warehouse):
+    def goal_test(self, state):
         """Return True if the state is a goal. The default method compares the
         state to self.goal, as specified in the constructor. Override this
         method if checking against a single self.goal is not enough."""
