@@ -237,7 +237,7 @@ class SokobanPuzzle(search.Problem):
 
     
     def __init__(self, warehouse):
-        raise NotImplementedError()
+        self.initial = warehouse
 
     def actions(self, warehouse):
         # index of the blank
@@ -427,7 +427,17 @@ def solve_weighted_sokoban(warehouse):
 
     '''
     
-    raise NotImplementedError()
+    sokoban_problem = SokobanPuzzle(warehouse)
+
+    solution = search.astar_graph_search(sokoban_problem)
+
+    if solution == None:
+        return 'Impossible', None
+    
+    S = solution.path()
+    C = solution.path_cost
+    return S, C
+
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
