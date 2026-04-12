@@ -324,12 +324,23 @@ class SokobanPuzzle(search.Problem):
         is such that the path doesn't matter, this function will only look at
         state2.  If the path does matter, it will consider c and maybe state1
         and action. The default method costs 1 for every step in the path."""
-        raise NotImplementedError
+        # Always costs at least 1 to move player
+        c += 1
 
-    def value(self, state):
-        """For optimization problems, each state has a value.  Hill-climbing
-        and related algorithms try to maximize this value."""
-        raise NotImplementedError
+        # Check each box to see if moved
+        for i in range(length(state1.boxes)):
+            if state1.boxes[i] != state2.boxes[i]:
+                # If box is defferent, add the weight of the box to cost
+                c += state1.weights[i]
+        
+        return c
+            
+
+        
+
+    def h(self, state):
+        """Heuristic for estimating cost to final solution, returns 0 while unimplemented"""
+        return 0
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
