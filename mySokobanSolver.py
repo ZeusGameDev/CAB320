@@ -32,7 +32,7 @@ Last modified by 2021-08-17  by f.maire@qut.edu.au
 import search 
 import sokoban
 
-direction_offset = {'Left' :(-1,0), 'Right':(1,0) , 'Up':(0,-1), 'Down':(0,1)} # (x,y) = (column,row)
+direction_offset = {'Left':(-1,0), 'Right':(1,0) , 'Up':(0,-1), 'Down':(0,1)} # (x,y) = (column,row)
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -251,10 +251,10 @@ class SokobanPuzzle(search.Problem):
             if (next_x,next_y) in warehouse.walls:
                 return # impossible move, do nothing
             elif (next_x,next_y) in warehouse.boxes:
-                if try_move_box( (next_x,next_y), (next_x+xy_offset[0],next_y+xy_offset[1]) ) == False:
+                if (next_x + xy_offset[0], next_y + xy_offset[1]) in warehouse.walls or (next_x + xy_offset[0], next_y + xy_offset[1]) in warehouse.boxes:
                     return # box next to the player could not be pushed
             else:
-                L.append(direction_offset.keys[i])
+                L.append(i)
         
         return L
 
@@ -369,34 +369,17 @@ def check_elem_action_seq(warehouse, action_seq):
     '''
     
     ##         "INSERT YOUR CODE HERE"
-    boxes = warehouse.boxes
-    previous_boxes = boxes
-
-    if warehouse.boxes != warehouse.targets:
-        return "Impossible"
+    sokoban_problem = SokobanPuzzle(warehouse)
     
     for action in action_seq:
         #general checks for action validity
         if action not in direction_offset.keys():
             return "Impossible"
-        if action not in SokobanPuzzle.actions(warehouse):
+        if action not in sokoban_problem.actions(warehouse):
             return "Impossible"
-        if boxes[i] in warehouse.walls:
-                return "Impossible"
-        
-        for i in range(len(boxes)):
-            #checks if box is in a taboo cell
-            if boxes[i] in taboo_cells(warehouse):
-                return "Impossible"
-            #checks if multiple boxes are being pushed at once
-            if boxes[i] != previous_boxes[i]:
-                     boxes_moved += 1
-                     if boxes_moved > 1:
-                            return "Impossible"
-        
-        previous_boxes = boxes
 
-    warehouse = SokobanPuzzle.result(warehouse, action)
+        warehouse = sokoban_problem.result(warehouse, action)
+        
     return warehouse.__str__()
     
 
