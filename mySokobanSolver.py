@@ -240,6 +240,9 @@ class SokobanPuzzle(search.Problem):
         self.initial = warehouse
 
     def actions(self, warehouse):
+        """Return a list of actions that can be executed in the given state. 
+        Checks to determine if player or box movement can be within walls or 
+        other boxes, and disallows them if so."""
         # index of the blank
         x,y = warehouse.worker
         L = []  # list of legal actions
@@ -249,10 +252,10 @@ class SokobanPuzzle(search.Problem):
             next_x , next_y = x+xy_offset[0] , y+xy_offset[1] # where the player will go if possible
             # ches if possible to move the player in this direction
             if (next_x,next_y) in warehouse.walls:
-                return # impossible move, do nothing
+                continue # impossible move, do nothing
             elif (next_x,next_y) in warehouse.boxes:
                 if (next_x + xy_offset[0], next_y + xy_offset[1]) in warehouse.walls or (next_x + xy_offset[0], next_y + xy_offset[1]) in warehouse.boxes:
-                    return # box next to the player could not be pushed
+                    continue # box next to the player could not be pushed
             else:
                 L.append(i)
         
@@ -339,34 +342,27 @@ class SokobanPuzzle(search.Problem):
         
 
     def h(self, state):
-        """Heuristic for estimating cost to final solution, returns 0 while unimplemented"""
-        return 0
+        box_h = 0
+        min_h = 0
+        for i in range(len(state.boxes)):
+            smallest_h = 99999999
+            for j in range(len(state.targets)):
+                box_x = state.boxes[i][0]
+                box_y = state.boxes[i][1]
+                target_x = state.targets[j][0]
+                target_y = state.targets[j][1]
+                box_h = abs(box_x - target_x) + abs(box_y - target_y) * (state.weights[i] + 1)
+                if smallest_h > box_h:
+                    smallest_h = box_h
+            min_h += smallest_h
+        return min_h
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 def check_elem_action_seq(warehouse, action_seq):
-    '''
-    
-    Determine if the sequence of actions listed in 'action_seq' is legal or not.
-    
-    Important notes:
-      - a legal sequence of actions does not necessarily solve the puzzle.
-      - an action is legal even if it pushes a box onto a taboo cell.
-        
-    @param warehouse: a valid Warehouse object
-
-    @param action_seq: a sequence of legal actions.
-           For example, ['Left', 'Down', Down','Right', 'Up', 'Down']
-           
-    @return
-        The string 'Impossible', if one of the action was not valid.
-           For example, if the agent tries to push two boxes at the same time,
-                        or push a box into a wall.
-        Otherwise, if all actions were successful, return                 
-               A string representing the state of the puzzle after applying
-               the sequence of actions.  This must be the same string as the
-               string returned by the method  Warehouse.__str__()
-    '''
+    """Function that compares the actions in the provided sequence to the legal 
+    actions and the result of those actions. If the sequence is legal, return 
+    the resulting warehouse configuration as a string. If not, return "Impossible"."""
     
     ##         "INSERT YOUR CODE HERE"
     sokoban_problem = SokobanPuzzle(warehouse)
