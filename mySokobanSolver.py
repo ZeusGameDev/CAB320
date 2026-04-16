@@ -1,4 +1,4 @@
-
+from scipy.optimize import linear_sum_assignment
 '''
 
     Sokoban assignment
@@ -48,32 +48,7 @@ def my_team():
     
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-
-def taboo_cells(warehouse):
-    '''  
-    Identify the taboo cells of a warehouse. A "taboo cell" is by definition
-    a cell inside a warehouse such that whenever a box get pushed on such 
-    a cell then the puzzle becomes unsolvable. 
-    
-    Cells outside the warehouse are not taboo. It is a fail to tag one as taboo.
-    
-    When determining the taboo cells, you must ignore all the existing boxes, 
-    only consider the walls and the target  cells.  
-    Use only the following rules to determine the taboo cells;
-     Rule 1: if a cell is a corner and not a target, then it is a taboo cell.
-     Rule 2: all the cells between two corners along a wall are taboo if none of 
-             these cells is a target.
-    
-    @param warehouse: 
-        a Warehouse object with a worker inside the warehouse
-
-    @return
-       A string representing the warehouse with only the wall cells marked with 
-       a '#' and the taboo cells marked with a 'X'.  
-       The returned string should NOT have marks for the worker, the targets,
-       and the boxes.  
-    '''
+def list_taboo_cells(warehouse):
     # List of all coordinates  
     cells_to_check = [(x, y) for x in range(0, warehouse.ncols) for y in range(0, warehouse.nrows)]
     # Remove walls and targets
@@ -204,6 +179,35 @@ def taboo_cells(warehouse):
                     break
             if not conf_valid:
                 taboo_cell_list.append(cell)
+    
+    return taboo_cell_list
+
+def taboo_cells(warehouse):
+    '''  
+    Identify the taboo cells of a warehouse. A "taboo cell" is by definition
+    a cell inside a warehouse such that whenever a box get pushed on such 
+    a cell then the puzzle becomes unsolvable. 
+    
+    Cells outside the warehouse are not taboo. It is a fail to tag one as taboo.
+    
+    When determining the taboo cells, you must ignore all the existing boxes, 
+    only consider the walls and the target  cells.  
+    Use only the following rules to determine the taboo cells;
+     Rule 1: if a cell is a corner and not a target, then it is a taboo cell.
+     Rule 2: all the cells between two corners along a wall are taboo if none of 
+             these cells is a target.
+    
+    @param warehouse: 
+        a Warehouse object with a worker inside the warehouse
+
+    @return
+       A string representing the warehouse with only the wall cells marked with 
+       a '#' and the taboo cells marked with a 'X'.  
+       The returned string should NOT have marks for the worker, the targets,
+       and the boxes.  
+    '''
+    # Main functionality in list_taboo_cells, leaves cells in list form for use in heuristic
+    taboo_cell_list = list_taboo_cells(warehouse)
         
     # Convert list of cells into map
     # Modified version of warehouse.__str__
@@ -221,7 +225,19 @@ def taboo_cells(warehouse):
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# Due to issues with 
+class State(sokoban.Warehouse):
+    def __init__(self, warehouse):
+        self.worker = warehouse.worker
+        self.boxes = warehouse.boxes
+        self.weights = warehouse.weights
+        self.targets = warehouse.targets
+        self.walls = warehouse.walls
+        self.ncols = warehouse.ncols
+        self.nrows = warehouse.nrows
 
+    def __lt__(self, state):
+        return True
 
 class SokobanPuzzle(search.Problem):
     '''
@@ -237,7 +253,8 @@ class SokobanPuzzle(search.Problem):
 
     
     def __init__(self, warehouse):
-        self.initial = warehouse
+        self.taboo_cells_list = list_taboo_cells(warehouse)
+        self.initial = State(warehouse)
 
     def actions(self, warehouse):
         """Return a list of actions that can be executed in the given state. 
@@ -256,6 +273,8 @@ class SokobanPuzzle(search.Problem):
             elif (next_x,next_y) in warehouse.boxes:
                 if (next_x + xy_offset[0], next_y + xy_offset[1]) in warehouse.walls or (next_x + xy_offset[0], next_y + xy_offset[1]) in warehouse.boxes:
                     continue # box next to the player could not be pushed
+                else:
+                    L.append(i)
             else:
                 L.append(i)
         
@@ -269,7 +288,7 @@ class SokobanPuzzle(search.Problem):
         # Create a copy of the current state to modify into next state
         next_state = state.copy()
         # Extract the worker and boxes for easy access
-        boxes = state.boxes
+        boxes = state.boxes.copy()
         worker = state.worker
         x = worker[0]
         y = worker[1]
@@ -312,14 +331,14 @@ class SokobanPuzzle(search.Problem):
         next_state.worker = worker
         next_state.boxes = boxes
 
-        return next_state
+        return State(next_state)
 
 
     def goal_test(self, state):
         """Return True if the state is a goal. The default method compares the
         state to self.goal, as specified in the constructor. Override this
         method if checking against a single self.goal is not enough."""
-        return (state.boxes == state.targets)
+        return (set(state.boxes) == set(state.targets))
 
     def path_cost(self, c, state1, action, state2):
         """Return the cost of a solution path that arrives at state2 from
@@ -331,7 +350,7 @@ class SokobanPuzzle(search.Problem):
         c += 1
 
         # Check each box to see if moved
-        for i in range(length(state1.boxes)):
+        for i in range(len(state1.boxes)):
             if state1.boxes[i] != state2.boxes[i]:
                 # If box is defferent, add the weight of the box to cost
                 c += state1.weights[i]
@@ -341,21 +360,32 @@ class SokobanPuzzle(search.Problem):
 
         
 
-    def h(self, state):
-        box_h = 0
-        min_h = 0
+    def h(self, node):
+        state = node.state
+        heuristic = 0
+        player_h = 9999999
+        box_h_mat = [[0 for x in range(len(state.boxes))] for y in range(len(state.targets))] 
         for i in range(len(state.boxes)):
-            smallest_h = 99999999
+            box_x = state.boxes[i][0]
+            box_y = state.boxes[i][1]
             for j in range(len(state.targets)):
-                box_x = state.boxes[i][0]
-                box_y = state.boxes[i][1]
                 target_x = state.targets[j][0]
                 target_y = state.targets[j][1]
-                box_h = abs(box_x - target_x) + abs(box_y - target_y) * (state.weights[i] + 1)
-                if smallest_h > box_h:
-                    smallest_h = box_h
-            min_h += smallest_h
-        return min_h
+                box_h = (abs(box_x - target_x) + abs(box_y - target_y)) * (state.weights[i] + 1)
+                box_h_mat[i][j] = box_h
+            if state.boxes[i] in self.taboo_cells_list:
+                heuristic += 999999999
+            player_cur_h = abs(box_x - state.worker[0]) + abs(box_y - state.worker[1]) - 1
+            if player_cur_h < player_h:
+                player_h = player_cur_h
+        
+        boxes, targets = linear_sum_assignment(box_h_mat)
+
+        for box, target in zip(boxes, targets):
+            heuristic += box_h_mat[box][target]
+
+        heuristic += player_h
+        return heuristic
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
