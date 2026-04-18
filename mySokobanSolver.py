@@ -32,6 +32,7 @@ Last modified by 2021-08-17  by f.maire@qut.edu.au
 import search 
 import sokoban
 
+#Dictionary is borrowed from provided gui_sokoban.py file, leaving directional commands in a consistent format
 direction_offset = {'Left':(-1,0), 'Right':(1,0) , 'Up':(0,-1), 'Down':(0,1)} # (x,y) = (column,row)
 
 
@@ -45,6 +46,8 @@ def my_team():
     
     '''
     return [ (11885807, 'Zach', 'Coglan'), (12452068, 'Xavier', 'White')]
+
+    #hello, viewer! hope you're having a great day, remember to eat well and stay hydrated :D - Zach and Xavier
     
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -260,19 +263,19 @@ class SokobanPuzzle(search.Problem):
         """Return a list of actions that can be executed in the given state. 
         Checks to determine if player or box movement can be within walls or 
         other boxes, and disallows them if so."""
-        # index of the blank
         x,y = warehouse.worker
-        L = []  # list of legal actions
+        #new list of possible actions is generated for each successive worker state
+        L = []
 
         for i in direction_offset.keys():
             xy_offset = direction_offset[i]
-            next_x , next_y = x+xy_offset[0] , y+xy_offset[1] # where the player will go if possible
-            # ches if possible to move the player in this direction
+            next_x , next_y = x+xy_offset[0] , y+xy_offset[1]
+            # check if possible to move worker in this direction
             if (next_x,next_y) in warehouse.walls:
-                continue # impossible move, do nothing
+                continue
             elif (next_x,next_y) in warehouse.boxes:
                 if (next_x + xy_offset[0], next_y + xy_offset[1]) in warehouse.walls or (next_x + xy_offset[0], next_y + xy_offset[1]) in warehouse.boxes:
-                    continue # box next to the player could not be pushed
+                    continue
                 else:
                     L.append(i)
             else:
@@ -362,9 +365,13 @@ class SokobanPuzzle(search.Problem):
 
     def h(self, node):
         state = node.state
+        #worker movement costs nothing, so heuristic is based on box movement only
         heuristic = 0
+        #arbitrary large number higher to serve as frame of reference for worker movement
+        #automatically filters out solutions with far excessive box movement
         player_h = 9999999
         box_h_mat = [[0 for x in range(len(state.boxes))] for y in range(len(state.targets))] 
+        #calculate the manhattan distance between each box and target, factoring box weight
         for i in range(len(state.boxes)):
             box_x = state.boxes[i][0]
             box_y = state.boxes[i][1]
@@ -374,6 +381,7 @@ class SokobanPuzzle(search.Problem):
                 box_h = (abs(box_x - target_x) + abs(box_y - target_y)) * (state.weights[i] + 1)
                 box_h_mat[i][j] = box_h
             if state.boxes[i] in self.taboo_cells_list:
+                #even bigger arbitrary number to filter out taboo cell solutions
                 heuristic += 999999999
             player_cur_h = abs(box_x - state.worker[0]) + abs(box_y - state.worker[1]) - 1
             if player_cur_h < player_h:
@@ -394,7 +402,6 @@ def check_elem_action_seq(warehouse, action_seq):
     actions and the result of those actions. If the sequence is legal, return 
     the resulting warehouse configuration as a string. If not, return "Impossible"."""
     
-    ##         "INSERT YOUR CODE HERE"
     sokoban_problem = SokobanPuzzle(warehouse)
     
     for action in action_seq:
